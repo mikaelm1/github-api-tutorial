@@ -16,7 +16,17 @@
             <p class="home-par">Enter Description</p>
             <textarea class="form-control" rows="2" name="description"></textarea>
         </div>
-        
         <button>Create Repo</button>
     </form>
+
+    <form action="/repo/delete" method="post" class="home-form">
+        <p class="home-par">Enter your username and one of your repos</p>
+        <input type="text" name="username" placeholder="username">
+        <input type="text" name="reponame" placeholder="reponame">
+        <div style="margin-top: 12px">
+            <button>Delete My Repo</button>
+        </div>
+        
+    </form>
+
 </div>

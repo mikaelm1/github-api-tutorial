@@ -13,7 +13,14 @@
                 <li><a href="/login">Login</a></li>
             </ul> 
             {{/if}}
-            
         </div>
+    </div>
+
+    <div class="container">
+        {{#if message}}
+            <div class="alert alert-info" role="alert">
+                {{message}}
+            </div>
+        {{/if}}
     </div>
 </nav>

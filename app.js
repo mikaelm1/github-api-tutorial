@@ -42,7 +42,7 @@ function postData(url, withAuth, body, callback) {
     console.log("Making GET with url: " + url);
     request.post({url, headers: {'user-agent': 'node.js', 'Content-Type': 'application/json'}, json: body}, function(err, response, body){
         if (err){
-            console.log("Error making GET call: " + err);
+            console.log("Error making POST call: " + err);
             // return "";
             callback("");
             return;
@@ -52,6 +52,25 @@ function postData(url, withAuth, body, callback) {
         // console.log(response);
         callback(body);
     })
+}
+
+function deleteData(url, callback) {
+    if (!userToken) {
+        callback("");
+        return;
+    }
+    url += "?access_token=" + userToken;
+    request.delete({url: url, headers: {'user-agent': 'node.js', 'Content-Type': 'application/json'}}, function(err, response, body){
+        if (err){
+            console.log("Error making DELETE call: " + err);
+            // return "";
+            callback("");
+            return;
+        }
+        console.log(body);
+        console.log(response.headers.status);
+        callback({'message': response.headers.status});
+    });
 }
 
 // Base routes ==============================================================
@@ -93,7 +112,7 @@ app.get('/gitauth', function(req, res){
 });
 
 app.get('/login', function(req, res){
-    var url = "https://github.com/login/oauth/authorize?state=" + RANDOM_STRING + "&client_id=" + CLIENT_ID + "&scope=user%20user:email%20user:follow%20repo";
+    var url = "https://github.com/login/oauth/authorize?state=" + RANDOM_STRING + "&client_id=" + CLIENT_ID + "&scope=user%20user:email%20user:follow%20repo%20delete_repo%20admin:org";
     res.render("login", {url: url, userToken: userToken});
 });
 
@@ -133,6 +152,7 @@ app.post('/repo', function(req, res){
                 repoData.push(repo);
             });
         }
+        repoData.sort(byDate); // sort by newest created at top
         var dataCount = repoData.length;
         res.render("repo", {userName: userName, repoArray: repoData, dataCount: dataCount, userToken: userToken});
     });
@@ -166,6 +186,34 @@ app.post('/repo/create', function(req, res){
         res.render("repo", {userName: repoOwner, repoArray: repoData, dataCount: 1, userToken: userToken});
     });
 });
+
+app.post('/repo/delete', function(req, res){
+    var userName = req.body.username;
+    var repoName = req.body.reponame;
+    if (!userToken || !userName || !repoName) {
+        console.log("Need user and repo to delete");
+        res.redirect("/home");
+    }
+    var url = BASE_URL + "/repos/" + userName + "/" + repoName;
+    deleteData(url, function(body){
+        if (body === "") {
+            console.log("Got empty body for delete repo");
+            res.redirect("/home");
+            return;
+        }
+
+    });
+});
+
+// Helpers ===============================================================
+function byDate(lh, rh) {
+    if (lh.repoCreated < rh.repoCreated) {
+        return 1;
+    } else if (lh.repoCreated > rh.repoCreated) {
+        return -1;
+    }
+    return 0;
+}
 
 // Server setup
 app.listen(app.get('port'), function(){
