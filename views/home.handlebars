@@ -1,1 +1,10 @@
-<h1>Welcome to the GitHub API Tutorial</h1>
+{{> header}}
+
+<div class="container">
+    <h1>Welcome to the GitHub API Tutorial</h1>
+
+    <form action="/repo" method="post">
+        <input type="text" name="username" placeholder="username:mikaelm1">
+        <button>Fetch Repos</button>
+    </form>
+</div>
