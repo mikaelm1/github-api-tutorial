@@ -183,7 +183,7 @@ app.post('/repo/create', function(req, res){
         repo.repoDesc = body.description;
         var repoOwner = body.owner.login;
         repoData.push(repo);
-        res.render("repo", {userName: repoOwner, repoArray: repoData, dataCount: 1, userToken: userToken});
+        res.render("repo", {userName: repoOwner, repoArray: repoData, dataCount: 1, userToken: userToken, message: "Successfully created repo"});
     });
 });
 
@@ -192,16 +192,16 @@ app.post('/repo/delete', function(req, res){
     var repoName = req.body.reponame;
     if (!userToken || !userName || !repoName) {
         console.log("Need user and repo to delete");
-        res.redirect("/home");
+        res.render("home", {userToken: userToken, message:"Error deleting repo"});
     }
     var url = BASE_URL + "/repos/" + userName + "/" + repoName;
     deleteData(url, function(body){
         if (body === "") {
             console.log("Got empty body for delete repo");
-            res.redirect("/home");
+            res.render("home", {userToken: userToken, message:"Error deleting repo"});
             return;
         }
-
+        res.render("home", {userToken: userToken, message:"Successfully deleted repo"});
     });
 });
 
