@@ -11,11 +11,30 @@ app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
+var BASE_URL = "https://api.github.com"
 var CLIENT_ID = process.env.CLIENT_ID || "clientIDNotSetWillGet404";
 var CLIENT_SECRET = process.env.CLIENT_SECRET || "clientSecretNotSet";
 var RANDOM_STRING = "superrandom";
 var userToken;
 
+function getData(url, withAuth, callback) {
+    if (withAuth && userToken) {
+        url += "?access_token=" + userToken;
+    }
+    console.log("Making GET with url: " + url);
+    request.get({url, headers: {'user-agent': 'node.js'}}, function(err, response, body){
+        if (err){
+            console.log("Error making GET call: " + err);
+            // return "";
+            callback("");
+        }
+        var jsonBody = JSON.parse(body);
+        // console.log(jsonBody);
+        callback(jsonBody);
+    })
+}
+
+// Base routes ==============================================================
 app.get('/', function(req, res){
     res.type('application/json');
     response = {'message': 'App is healthy'};
@@ -26,6 +45,7 @@ app.get('/home', function(req, res){
     res.render("home");
 });
 
+// Auth routes =================================================================
 app.get('/gitauth', function(req, res){
     console.log("Got request from GitHub: " + req.query.code);
     sessionCode = req.query.code;
@@ -66,13 +86,36 @@ app.post('/login', function(req, res){
     res.render("home");
 });
 
+// Repo Routes ================================================================
 app.post('/repo', function(req, res){
     userName = req.body.username;
+    var url = BASE_URL;
+    var useAuth = true;
     if (userName === "") {
-        res.render("repo", {userName: userName});
-        return;
+        // get logged in user's repos 
+        url += "/user/repos";
+    } else {
+        // get repos for unauth user 
+        useAuth = false;
+        url += "/users/" + userName + "/repos";
     }
-    res.render("repo", {userName: userName});
+    var repoData = []
+    getData(url, useAuth, function(body){
+        console.log("BODY: " + body[0].name);
+        if (body === ""){
+            console.log("Error");
+        } else {
+            body.forEach(function(r){
+                var repo = {};
+                repo.repoName = r.name;
+                repo.repoCreated = r.created_at;
+                repo.repoDesc = r.description;
+                repoData.push(repo);
+            });
+        }
+        var dataCount = repoData.length;
+        res.render("repo", {userName: userName, repoArray: repoData, dataCount: dataCount});
+    });
 });
 
 app.listen(app.get('port'), function(){
