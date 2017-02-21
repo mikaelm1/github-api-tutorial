@@ -3,8 +3,20 @@
 <div class="container">
     <h1>Welcome to the GitHub API Tutorial</h1>
 
-    <form action="/repo" method="post">
+    <form action="/repo" method="post" class="home-form">
+        <p class="home-par">Leave empty to get your own data</p>
         <input type="text" name="username" placeholder="username:mikaelm1">
         <button>Fetch My Repos</button>
+    </form>
+
+    <form action="/repo/create" method="post" class="home-form">
+        <p class="home-par">Create new repository</p>
+        <input type="text" name="reponame" placeholder="name:awesomeproject">
+         <div class="form-group">
+            <p class="home-par">Enter Description</p>
+            <textarea class="form-control" rows="2" name="description"></textarea>
+        </div>
+        
+        <button>Create Repo</button>
     </form>
 </div>

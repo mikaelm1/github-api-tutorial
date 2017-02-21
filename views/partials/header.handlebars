@@ -4,9 +4,16 @@
             <a href="/home" class="navbar-brand">Unicorn</a>
         </div>
         <div class="collapse navbar-collapse">
+            {{#if userToken}}
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">Logout</a></li>
+            </ul> 
+            {{else}}
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="/login">Login</a></li>
             </ul> 
+            {{/if}}
+            
         </div>
     </div>
 </nav>
