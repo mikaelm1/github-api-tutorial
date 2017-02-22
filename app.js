@@ -164,6 +164,7 @@ app.post('/repo/create', function(req, res){
     // Only for authenticated users 
     var repoName = req.body.reponame;
     if (!userToken || !repoName) {
+        flashMessage = "Need to be logged in to create repository";
         res.redirect("/home");
         return;
     }
@@ -194,16 +195,19 @@ app.post('/repo/delete', function(req, res){
     var repoName = req.body.reponame;
     if (!userToken || !userName || !repoName) {
         console.log("Need user and repo to delete");
-        res.render("home", {userToken: userToken, message:"Error deleting repo"});
+        flashMessage = "Error deleting repo";
+        res.redirect("/home");
     }
     var url = BASE_URL + "/repos/" + userName + "/" + repoName;
     deleteData(url, function(body){
         if (body === "") {
             console.log("Got empty body for delete repo");
-            res.render("home", {userToken: userToken, message:"Error deleting repo"});
+            flashMessage = "Error deleting repo";
+            res.redirect("/home");
             return;
         }
-        res.render("home", {userToken: userToken, message:"Successfully deleted repo"});
+        flashMessage = "Successfully deleted repo";
+        res.redirect("/home");
     });
 });
 
