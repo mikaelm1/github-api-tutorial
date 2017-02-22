@@ -16,6 +16,7 @@ var CLIENT_ID = process.env.CLIENT_ID || "clientIDNotSetWillGet404";
 var CLIENT_SECRET = process.env.CLIENT_SECRET || "clientSecretNotSet";
 var RANDOM_STRING = "superrandom";
 var userToken;
+var flashMessage;
 
 // API helpers ==============================================================
 function getData(url, withAuth, callback) {
@@ -26,8 +27,8 @@ function getData(url, withAuth, callback) {
     request.get({url, headers: {'user-agent': 'node.js'}}, function(err, response, body){
         if (err){
             console.log("Error making GET call: " + err);
-            // return "";
             callback("");
+            return;
         }
         var jsonBody = JSON.parse(body);
         // console.log(jsonBody);
@@ -39,7 +40,7 @@ function postData(url, withAuth, body, callback) {
     if (withAuth && userToken) {
         url += "?access_token=" + userToken;
     }
-    console.log("Making GET with url: " + url);
+    console.log("Making POST with url: " + url);
     request.post({url, headers: {'user-agent': 'node.js', 'Content-Type': 'application/json'}, json: body}, function(err, response, body){
         if (err){
             console.log("Error making POST call: " + err);
@@ -51,7 +52,7 @@ function postData(url, withAuth, body, callback) {
         // console.log(body);
         // console.log(response);
         callback(body);
-    })
+    });
 }
 
 function deleteData(url, callback) {
@@ -81,7 +82,8 @@ app.get('/', function(req, res){
 });
 
 app.get('/home', function(req, res){
-    res.render("home", {userToken: userToken});
+    res.render("home", {userToken: userToken, message: flashMessage});
+    flashMessage = null;
 });
 
 // Auth routes =================================================================
@@ -205,6 +207,44 @@ app.post('/repo/delete', function(req, res){
     });
 });
 
+// create a webhook for a repo 
+app.post('/repo/webhook', function(req, res){
+    var userName = req.body.username;
+    var repoName = req.body.reponame;
+    if (!userToken || !userName || !repoName) {
+        console.log("Need user and repo to create a webhook");
+        flashMessage = "Need username and name of repo to create a webhook";
+        res.redirect("/home");
+        return;
+    }
+    var url = BASE_URL + "/repos/" + userName + "/" + repoName + "/hooks";
+    var events = ["push", "pull_request", "watch"];
+    var callbackURL = "http://localhost:3000/repo/webhook/callback";
+    var config = {"url": callbackURL, "content_type": "json"};
+    var reqBody = {"name": "web", "active": true, "events": events, "config": config}
+    postData(url, true, reqBody, function(body){
+        if (body === "") {
+            flashMessage = "Error creating webhook";
+            res.redirect("/home");
+            return;
+        } 
+        flashMessage = "Successfully created webhook.";
+        var hook = {
+            "id": body.id,
+            "test_url": body.test_url,
+            "ping_url": body.ping_url,
+            "name": body.name
+        };
+        res.redirect("/home");
+        testWebhook(hook);
+    });
+});
+
+// callback route for the webhook
+app.post('/repo/webhook/callback', function(req, res){
+    console.log("Need to have this route be accessible from the Internet in order to get any requests. Also, set up websockets or some other way of pushing from the server to display this message on the client side!");
+});
+
 // Helpers ===============================================================
 function byDate(lh, rh) {
     if (lh.repoCreated < rh.repoCreated) {
@@ -215,8 +255,23 @@ function byDate(lh, rh) {
     return 0;
 }
 
+function testWebhook(hook) {
+    console.log("Testing hook:");
+    console.log(hook);
+    var url = hook.test_url + "s";
+    console.log(url);
+    request.post({url: url, headers: {'user-agent': 'node.js', 'Content-Type': 'application/json'}}, function(err, response, body){
+        if (err){
+            console.log("Error making POST call: " + err);
+            return;
+        }
+        console.log("Successfully sent test request to webhook");
+        console.log(body);
+    });
+}
+
 // Server setup
 app.listen(app.get('port'), function(){
     console.log("Server running at http://localhost:" + app.get('port'));
     console.log("Press Ctrl-C to terminate");
-})
+});
